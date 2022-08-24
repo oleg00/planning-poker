@@ -1,0 +1,75 @@
+﻿@inject IJSRuntime _jsRuntime
+
+@if (!IsUserNameSet)
+{
+    <div class="container container username-container container-reveal min-vw-100">
+        <div class="row justify-content-center align-items-center" style="height:100vh">
+            <div class="col-4">
+                <div class="card">
+                    <div class="card-body">
+                        <form action="" autocomplete="off">
+                            <div class="form-group">
+                                <h5 class="form-label">Name</h5>
+                                <input type="text" class="form-control" name="username"
+                                       @bind="UserNameInput">
+                            </div>
+                            <button type="button" id="sendlogin" class="btn btn-primary mt-2" @onclick="SetUserName">Start</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    
+    private bool IsUserNameSet { get; set; }
+    
+    public string? UserNameInput;
+
+    private async Task SetUserName()
+    {
+        if (UserNameInput is not null)
+        {
+            await _jsRuntime.InvokeVoidAsync("hideUserInputView");
+            await _jsRuntime.InvokeVoidAsync("storeUserName", UserNameInput);
+            IsUserNameSet = true;
+        }
+    }
+    
+    private async Task TryRestoreUserNameAndJoinRoom()
+    {
+        if (UserNameInput is null)
+        {
+            var userName = await _jsRuntime.InvokeAsync<string>("restoreUserName");
+            if (!string.IsNullOrWhiteSpace(userName))
+            {
+                UserNameInput = userName;
+                IsUserNameSet = true;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+
+        await StoreUserNameAsync();
+    }
+
+    private async Task StoreUserNameAsync()
+    {
+        if (UserNameInput is not null)
+        {
+            await _jsRuntime.InvokeVoidAsync("hideUserInputView");
+            await _jsRuntime.InvokeVoidAsync("storeUserName", UserNameInput);
+        }
+    }
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await _jsRuntime.InvokeVoidAsync("initTooltips");
+        
+        if (firstRender)
+        {
+            await TryRestoreUserNameAndJoinRoom();
+        }
+    }
+}

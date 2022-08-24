@@ -1,0 +1,119 @@
+﻿@page "/"
+@page "/planningrooms"
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Components
+@inject NavigationManager _navigationManager
+
+<UserInputComponent @ref="_userInputComponent"></UserInputComponent>
+
+<div class="container min-vh-100 d-flex flex-column flex-grow-1">
+
+        <div class="row flex-grow-1">
+
+            <div class="row d-flex justify-content-center">
+                <div class="col text-center d-flex align-content-center justify-content-center">
+                    <h1 class="align-self-center">JOIN ROOMS</h1>
+                </div>
+            </div>
+
+            <div class="row d-flex">
+
+                @if (Rooms is not null)
+                {
+                    @foreach (var room in Rooms)
+                    {
+                        <div class="card m-3" style="max-width: 8rem; max-height: 8rem;">
+                            <div class="card-body">
+                                <h5 class="card-title">@room</h5>
+                                <a href="#" class="btn btn-primary" @onclick="() => JoinRoom(room)">JOIN</a>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            
+        </div>
+
+        <div class="row flex-grow-1">
+            
+            <hr/>
+
+            <div class="open-room-container d-flex align-content-center flex-column">
+            
+            <div class="row">
+                <div class="col d-flex justify-content-center">
+                    <h1 class="align-self-center">OPEN THE ROOM</h1>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col d-flex align-content-center justify-content-center">
+                    <div class="card my-3">
+                        <div class="card-body">
+                            <form action="" autocomplete="off">
+                                <div class="form-group">
+                                    <h5 class="form-label">Room Name</h5>
+                                    <input type="text" class="form-control" name="username"
+                                           @bind="RoomName">
+                                </div>
+                                <button type="button" id="createroom" class="btn btn-primary mt-2" @onclick="CreateRoom">CREATE</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            </div>
+            
+        </div>
+        
+    </div>
+
+@code {
+    
+    private List<string> Rooms { get; } = new();
+    private string? RoomName { get; set; }
+    private HubConnection? _hubConnection;
+
+    private UserInputComponent _userInputComponent;
+    
+    private void OnReceiveRooms(List<string> rooms)
+    {
+        Rooms.Clear();
+        Rooms.AddRange(rooms);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetRooms()
+    {
+        var rooms = await _hubConnection?.InvokeAsync<List<string>>("GetRooms")!;
+        Rooms.Clear();
+        Rooms.AddRange(rooms);
+    }
+
+    private void JoinRoom(string roomName)
+    {
+        NavigateToRoom(roomName);
+    }
+
+    private void NavigateToRoom(string roomName)
+    {
+        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserNameInput}");
+    }
+    
+    private void CreateRoom()
+    {
+        if (RoomName is not null)
+            NavigateToRoom(RoomName);
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri("/planninghub"))
+            .Build();
+        _hubConnection.On<List<string>>("ReceiveRooms", OnReceiveRooms);
+        await _hubConnection.StartAsync();
+        await SetRooms();
+    }
+}

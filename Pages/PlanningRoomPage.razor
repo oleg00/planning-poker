@@ -1,0 +1,250 @@
+﻿@page "/planningrooms/{roomId}/{userName}"
+
+@inject IJSRuntime _jsRuntime
+@inject NavigationManager _navigationManager
+
+@implements IAsyncDisposable
+
+@using System.Globalization
+@using Microsoft.AspNetCore.SignalR.Client
+@using PlanningPoker.Data
+
+<PageTitle>Creatio Planning Poker</PageTitle>
+
+<div class="container min-vh-100 main-container d-flex flex-column">
+
+    <div class="row flex-grow-1">
+        <div class="col text-center d-flex align-content-center justify-content-center">
+            <h1 class="align-self-center">@RoomId</h1>
+        </div>
+    </div>
+
+    <div class="row flex-grow-1">
+
+        <div class="row flex-grow-1">
+            <div class="col">
+                <hr>
+            </div>
+        </div>
+
+        <div class="row flex-grow-1">
+            <div class="col"></div>
+            <div class="col d-flex justify-content-around">
+                @foreach (var user in PlanningUsers)
+                {
+                    <div class="user-card m-2">
+                        <div class="unrevealed-card flip-card m-auto">
+                            <div class="flip-card-inner">
+                                @if (user.Name == UserName)
+                                {
+                                    <div class="@(user.HasVoted ? "voted front flip-card-front" : "front flip-card-front")"></div>
+                                    <div class="back flip-card-back">@user.CardValue</div>
+                                }
+                                else
+                                {
+                                    <div class="@(user.HasVoted ? "voted front flip-card-front" : "front flip-card-front")"></div>
+                                    <div class="back flip-card-back">XXX</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="d-flex position-relative mt-2">
+                            <div class="span fw-bold my-2">@user.Name</div>
+                            <div class="mx-1 my-2 align-self-center state-circle @(user.HasVoted ? "state-circle-voted" : "")"></div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="col"></div>
+        </div>
+
+        <div class="row"></div>
+
+        <div class="row">
+            <div class="col d-flex justify-content-center align-content-end">
+
+                <button class="btn btn-primary align-self-end my-2 @(PlanningUsers.All(pu => pu.HasVoted) ? "" : "disabled")"
+                        style="max-height: 3em;"
+                        @onclick="RevealCardsAsync">
+                    REVEAL CARDS
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row flex-grow-1">
+
+        <div class="row d-flex align-content-end">
+            <hr>
+        </div>
+        <div class="row align-items-center">
+            <div class="cards-list d-flex justify-content-center my-2">
+                @foreach (var (card, tooltip) in PredefinedCardValues)
+                {
+                    <button title="@tooltip" data-toggle="tooltip" data-popper-placement="top"
+                            class="btn planning-card card-@card"
+                            @onclick="() => PickCardAsync(card)">
+                        @card.ToString(new CultureInfo("en-US"))
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container-reveal min-vh-100 min-vw-100 h-100 d-none">
+
+    <div class="container min-vh-100">
+        <div class="row min-vh-100">
+            <div class="col-12 container-reveal-center d-flex flex-column">
+                <div class="card-container d-flex container justify-content-center">
+
+                    @foreach (var cardValue in CardValues)
+                    {
+                        <div class="card m-3">
+                            <div class="card-header h-50">
+                                <h1 class="text-center text-white mt-1">@cardValue.Key</h1>
+                            </div>
+                            <div class="card-body h-50">
+                                <h2 class="card-text text-center mt-1">
+                                    @cardValue.Value.ToString(new CultureInfo("en-US"))
+                                </h2>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <hr>
+                <button class="glow-on-hover align-self-center mt-2" type="button" @onclick="StartNewGameAsync">
+                    NEW GAME
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@code {
+    
+    [Parameter]
+    public string? RoomId { get; set; }
+    
+    [Parameter]
+    public string? UserName { get; set; }
+
+    private HubConnection? _hubConnection;
+
+    private List<PlanningUserPage> PlanningUsers { get; } = new();
+    private Dictionary<string, double> CardValues { get; set; } = new();
+    private static List<(double, string)> PredefinedCardValues => new()
+    {
+        (0.5, "изян"),
+        (1, "изи"), 
+        (2, "просто"),
+        (3, "вроде просто"),
+        (5, "норм"),
+        (8, "норм так")
+    };
+
+    private void OnReceivedUserVote(string userName, double vote)
+    {
+        var planningUser = PlanningUsers.FirstOrDefault(pu => pu.Name == userName);
+        planningUser!.CardValue = vote;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnReceivedUsers(List<PlanningUserPage> users)
+    {
+        PlanningUsers.Clear();
+        foreach (var incomingUser in users)
+        {
+            PlanningUsers.Add(new PlanningUserPage()
+            {
+                Name = incomingUser.Name,
+                CardValue = incomingUser.CardValue
+            });
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task JoinRoomAsync()
+    {
+        if (RoomId is not null && UserName is not null && _hubConnection is not null)
+        {
+            await _hubConnection?.SendAsync("JoinRoomAsync", RoomId, UserName)!;
+        }
+    }
+    
+    private async Task PickCardAsync(double card)
+    {
+        await _hubConnection?.SendAsync("SetCardValue", RoomId, UserName, card)!;
+        PlanningUsers.FirstOrDefault(pu => pu.Name == UserName)!.CardValue = card;
+        StateHasChanged();
+    }
+
+    private async Task RevealCardsAsync()
+    {
+        await _hubConnection?.SendAsync("RevealCards", RoomId)!;
+    }
+
+    private async Task RevealCardsOnPageAsync()
+    {
+        CardValues = await _hubConnection?.InvokeAsync<Dictionary<string, double>>("GetCardValues", RoomId)!;
+        await _jsRuntime.InvokeVoidAsync("switchRevealView");
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task StartNewGameAsync()
+    {
+        await _hubConnection?.SendAsync("StartNewGame", RoomId)!;
+    }
+
+    private async Task StartNewGameOnPageAsync()
+    {
+        PlanningUsers.ForEach(pu =>
+        {
+            pu.CardValue = 0;
+        });
+        await _jsRuntime.InvokeVoidAsync("switchRevealView");
+    }
+    
+    private void InitHubListeners()
+    {
+        if (_hubConnection is null)
+            return;
+        
+        _hubConnection.On<List<PlanningUserPage>>("ReceiveUsers", OnReceivedUsers);
+        _hubConnection.On<string, double>("ReceiveUserVote", OnReceivedUserVote);
+        _hubConnection.On("StartNewGame", StartNewGameOnPageAsync);
+        _hubConnection.On("RevealCards", RevealCardsOnPageAsync);
+    }
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri("/planninghub"))
+            .Build();
+        InitHubListeners();
+        await _hubConnection.StartAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await _jsRuntime.InvokeVoidAsync("initTooltips");
+        
+        if (firstRender)
+        {
+            await JoinRoomAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.SendAsync("LeaveRoomAsync", RoomId, UserName);
+            await _hubConnection.DisposeAsync();
+        }
+    }
+
+}
