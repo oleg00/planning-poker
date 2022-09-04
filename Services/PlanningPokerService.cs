@@ -5,7 +5,7 @@ namespace PlanningPoker.Services;
 
 public interface IPlanningPokerService
 {
-    void JoinRoom(string groupName, string userName, string connectionId);
+    void JoinRoom(string groupName, string userName, bool isSpectator, string connectionId);
     IEnumerable<string> GetRooms();
     Dictionary<string, double> GetCardValues(string groupName);
     void SetCardValue(string groupName, string userName, double cardValue);
@@ -20,7 +20,7 @@ public class PlanningPokerService : IPlanningPokerService
 {
     private Dictionary<string, List<PlanningUserHub>> Rooms { get; } = new();
 
-    public void JoinRoom(string groupName, string userName, string connectionId)
+    public void JoinRoom(string groupName, string userName, bool isSpectator, string connectionId)
     {
         Rooms.TryAdd(groupName, new List<PlanningUserHub>());
         if (!Rooms[groupName].Any(pu => pu.Name.Equals(userName)))
@@ -28,7 +28,8 @@ public class PlanningPokerService : IPlanningPokerService
             Rooms[groupName].Add(new PlanningUserHub
             {
                 Name = userName,
-                ConnectionId = connectionId
+                ConnectionId = connectionId,
+                IsSpectator = isSpectator
             });
         }
     }
@@ -61,7 +62,11 @@ public class PlanningPokerService : IPlanningPokerService
     {
         return !Rooms.ContainsKey(groupName)
             ? new List<PlanningUserPage>()
-            : Rooms[groupName].Select(x => new PlanningUserPage { Name = x.Name}).ToList();
+            : Rooms[groupName].Select(x => new PlanningUserPage
+            {
+                Name = x.Name,
+                IsSpectator = x.IsSpectator
+            }).ToList();
     }
 
     public void RemoveUser(string connectionId)

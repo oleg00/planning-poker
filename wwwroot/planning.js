@@ -3,12 +3,11 @@
 }
 
 function switchRevealView() {
-    $('.main-container').toggleClass('d-none');
-    $('.container-reveal').toggleClass('d-none');
+    $('.container-reveal').toggleClass('hidden');
 }
 
 function hideUserInputView() {
-    $('.username-container').addClass('d-none');
+    $('.username-container').addClass('hidden');
 }
 
 function storeUserName(userName) {

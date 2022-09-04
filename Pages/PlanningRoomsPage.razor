@@ -22,10 +22,11 @@
                 {
                     @foreach (var room in Rooms)
                     {
-                        <div class="card m-3" style="max-width: 8rem; max-height: 8rem;">
+                        <div class="card m-3" style="max-width: 9rem; max-height: 9rem;">
                             <div class="card-body">
                                 <h5 class="card-title">@room</h5>
                                 <a href="#" class="btn btn-primary" @onclick="() => JoinRoom(room)">JOIN</a>
+                                <a href="#" class="btn btn-secondary my-1" @onclick="() => JoinRoomAsSpectator(room)">SPECTATE</a>
                             </div>
                         </div>
                     }
@@ -93,18 +94,23 @@
 
     private void JoinRoom(string roomName)
     {
-        NavigateToRoom(roomName);
+        NavigateToRoom(roomName, false);
+    }
+    
+    private void JoinRoomAsSpectator(string roomName)
+    {
+        NavigateToRoom(roomName, true);
     }
 
-    private void NavigateToRoom(string roomName)
+    private void NavigateToRoom(string roomName, bool isSpectator)
     {
-        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserNameInput}");
+        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserNameInput}/{isSpectator}");
     }
     
     private void CreateRoom()
     {
         if (RoomName is not null)
-            NavigateToRoom(RoomName);
+            NavigateToRoom(RoomName, false);
     }
     
     protected override async Task OnInitializedAsync()
@@ -116,4 +122,5 @@
         await _hubConnection.StartAsync();
         await SetRooms();
     }
+
 }

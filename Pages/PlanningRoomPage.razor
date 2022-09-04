@@ -1,4 +1,4 @@
-﻿@page "/planningrooms/{roomId}/{userName}"
+﻿@page "/planningrooms/{roomId}/{userName}/{isSpectator}"
 
 @inject IJSRuntime _jsRuntime
 @inject NavigationManager _navigationManager
@@ -62,7 +62,7 @@
         <div class="row">
             <div class="col d-flex justify-content-center align-content-end">
 
-                <button class="btn btn-primary align-self-end my-2 @(PlanningUsers.All(pu => pu.HasVoted) ? "" : "disabled")"
+                <button class="btn btn-primary align-self-end my-2 @(PlanningUsers.Where(pu => !pu.IsSpectator).All(pu => pu.HasVoted) ? "" : "disabled")"
                         style="max-height: 3em;"
                         @onclick="RevealCardsAsync">
                     REVEAL CARDS
@@ -93,7 +93,7 @@
 
 </div>
 
-<div class="container-reveal min-vh-100 min-vw-100 h-100 d-none">
+<div class="container-reveal min-vh-100 min-vw-100 h-100 hidden">
 
     <div class="container min-vh-100">
         <div class="row min-vh-100">
@@ -131,6 +131,9 @@
     
     [Parameter]
     public string? UserName { get; set; }
+    
+    [Parameter]
+    public string? IsSpectator { get; set; }
 
     private HubConnection? _hubConnection;
 
@@ -161,7 +164,8 @@
             PlanningUsers.Add(new PlanningUserPage()
             {
                 Name = incomingUser.Name,
-                CardValue = incomingUser.CardValue
+                CardValue = incomingUser.CardValue,
+                IsSpectator = incomingUser.IsSpectator
             });
         }
         InvokeAsync(StateHasChanged);
@@ -171,7 +175,9 @@
     {
         if (RoomId is not null && UserName is not null && _hubConnection is not null)
         {
-            await _hubConnection?.SendAsync("JoinRoomAsync", RoomId, UserName)!;
+            var isSpectatorParsed = bool.TryParse(IsSpectator, out var isSpectator);
+            await _hubConnection?.SendAsync("JoinRoomAsync", RoomId, UserName,
+                isSpectatorParsed && isSpectator)!;
         }
     }
     

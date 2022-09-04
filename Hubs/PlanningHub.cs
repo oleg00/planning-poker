@@ -18,10 +18,10 @@ public class PlanningHub : Hub
         await Clients.All.SendAsync("ReceiveMessage", user, message);
     }
     
-    public async Task JoinRoomAsync(string groupName, string userName)
+    public async Task JoinRoomAsync(string groupName, string userName, bool isSpectator)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-        _planningPokerService.JoinRoom(groupName, userName, Context.ConnectionId);
+        _planningPokerService.JoinRoom(groupName, userName, isSpectator, Context.ConnectionId);
         await Clients.All.SendAsync("ReceiveRooms", _planningPokerService.GetRooms().ToList());
         await Clients.Group(groupName).SendAsync("ReceiveUsers", _planningPokerService.GetUsersFromRoom(groupName));
     }

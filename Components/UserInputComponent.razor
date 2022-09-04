@@ -1,6 +1,6 @@
 ﻿@inject IJSRuntime _jsRuntime
 
-@if (!IsUserNameSet)
+@if (!IsUserNameSet && IsUserNameLoaded)
 {
     <div class="container container username-container container-reveal min-vw-100">
         <div class="row justify-content-center align-items-center" style="height:100vh">
@@ -25,6 +25,7 @@
 @code {
     
     private bool IsUserNameSet { get; set; }
+    private bool IsUserNameLoaded { get; set; } = false;
     
     public string? UserNameInput;
 
@@ -35,9 +36,10 @@
             await _jsRuntime.InvokeVoidAsync("hideUserInputView");
             await _jsRuntime.InvokeVoidAsync("storeUserName", UserNameInput);
             IsUserNameSet = true;
+            IsUserNameLoaded = true;
         }
     }
-    
+
     private async Task TryRestoreUserNameAndJoinRoom()
     {
         if (UserNameInput is null)
@@ -47,11 +49,11 @@
             {
                 UserNameInput = userName;
                 IsUserNameSet = true;
-                await InvokeAsync(StateHasChanged);
             }
         }
-
+        IsUserNameLoaded = true;
         await StoreUserNameAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task StoreUserNameAsync()
@@ -72,4 +74,6 @@
             await TryRestoreUserNameAndJoinRoom();
         }
     }
+
+
 }

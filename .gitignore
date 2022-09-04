@@ -1,0 +1,6 @@
+
+.idea/.idea.PlanningPoker.dir/.idea/.name
+*.dll
+bin/*
+obj/*
+.idea/*
