@@ -22,11 +22,12 @@
                 {
                     @foreach (var room in Rooms)
                     {
-                        <div class="card m-3" style="max-width: 9rem; max-height: 9rem;">
+                        <div class="card m-3" style="max-width: 9rem; max-height: 12rem;">
                             <div class="card-body">
                                 <h5 class="card-title">@room</h5>
-                                <a href="#" class="btn btn-primary" @onclick="() => JoinRoom(room)">JOIN</a>
+                                <a href="#" class="btn btn-primary my-1" @onclick="() => JoinRoom(room)">JOIN</a>
                                 <a href="#" class="btn btn-secondary my-1" @onclick="() => JoinRoomAsSpectator(room)">SPECTATE</a>
+                                <a href="#" class="btn btn-danger my-1" @onclick="() => CloseRoom(room)">CLOSE</a>
                             </div>
                         </div>
                     }
@@ -113,6 +114,11 @@
             NavigateToRoom(RoomName, false);
     }
     
+    private void CloseRoom(string room)
+    {
+        _hubConnection?.SendAsync("CloseRoom", room);
+    }
+    
     protected override async Task OnInitializedAsync()
     {
         _hubConnection = new HubConnectionBuilder()
@@ -122,5 +128,7 @@
         await _hubConnection.StartAsync();
         await SetRooms();
     }
+
+    
 
 }

@@ -84,6 +84,12 @@ public class PlanningHub : Hub
         await Clients.Group(groupName).SendAsync("StartNewGame");
         await ClearCardValues(groupName);
     }
+
+    public async Task CloseRoom(string groupName)
+    {
+        _planningPokerService.RemoveRoom(groupName);
+        await Clients.All.SendAsync("ReceiveRooms", _planningPokerService.GetRooms().ToList());
+    }
 }
 
     

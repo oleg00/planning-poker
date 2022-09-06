@@ -14,6 +14,7 @@ public interface IPlanningPokerService
     void RemoveUser(string connectionId);
     void LeaveRoom(string groupName, string userName);
     string GetRoomByConnectionId(string contextConnectionId);
+    void RemoveRoom(string groupName);
 }
 
 public class PlanningPokerService : IPlanningPokerService
@@ -94,5 +95,10 @@ public class PlanningPokerService : IPlanningPokerService
                 return roomKey;
         }
         return string.Empty;
+    }
+
+    public void RemoveRoom(string groupName)
+    {
+        Rooms.Remove(groupName);
     }
 }
