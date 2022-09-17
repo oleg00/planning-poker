@@ -22,7 +22,7 @@
                 {
                     @foreach (var room in Rooms)
                     {
-                        <div class="card m-3" style="max-width: 9rem; max-height: 12rem;">
+                        <div class="card m-3" style="max-width: 9rem; max-height: 16rem;">
                             <div class="card-body">
                                 <h5 class="card-title">@room</h5>
                                 <a href="#" class="btn btn-primary my-1" @onclick="() => JoinRoom(room)">JOIN</a>
@@ -105,7 +105,7 @@
 
     private void NavigateToRoom(string roomName, bool isSpectator)
     {
-        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserNameInput}/{isSpectator}");
+        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserName}/{isSpectator}");
     }
     
     private void CreateRoom()

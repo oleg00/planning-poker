@@ -10,10 +10,10 @@ function hideUserInputView() {
     $('.username-container').addClass('hidden');
 }
 
-function storeUserName(userName) {
-    localStorage.setItem('userName', userName);
+function storeUserState(userState) {
+    localStorage.setItem('userState', userState);
 }
 
-function restoreUserName() {
-    return localStorage.getItem('userName');
+function restoreUserState() {
+    return localStorage.getItem('userState');
 }

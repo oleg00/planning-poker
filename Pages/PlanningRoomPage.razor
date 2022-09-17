@@ -114,6 +114,12 @@
                         </div>
                     }
                 </div>
+                
+                @if (CardValues.Any())
+                {
+                    <h3 class="align-self-center mt-2 text-white">Average: @(Math.Ceiling(CardValues.Average(x => x.Value)))</h3>
+                }
+                
                 <hr>
                 <button class="glow-on-hover align-self-center mt-2" type="button" @onclick="StartNewGameAsync">
                     NEW GAME

@@ -1,6 +1,8 @@
-﻿@inject IJSRuntime _jsRuntime
+﻿@using PlanningPoker.Data
+@using Newtonsoft.Json
+@inject IJSRuntime _jsRuntime
 
-@if (!IsUserNameSet && IsUserNameLoaded)
+@if (!IsUserStateSet && IsUserStateLoaded)
 {
     <div class="container container username-container container-reveal min-vw-100">
         <div class="row justify-content-center align-items-center" style="height:100vh">
@@ -11,9 +13,12 @@
                             <div class="form-group">
                                 <h5 class="form-label">Name</h5>
                                 <input type="text" class="form-control" name="username"
-                                       @bind="UserNameInput">
+                                       @bind="UserName">
+                                <h5 class="form-label mt-2">Spectator mode</h5>
+                                <input type="checkbox" name="checkbox"
+                                       @bind="IsSpectator">
                             </div>
-                            <button type="button" id="sendlogin" class="btn btn-primary mt-2" @onclick="SetUserName">Start</button>
+                            <button type="button" id="sendlogin" class="btn btn-primary mt-2" @onclick="SetUserState">Start</button>
                         </form>
                     </div>
                 </div>
@@ -24,44 +29,51 @@
 
 @code {
     
-    private bool IsUserNameSet { get; set; }
-    private bool IsUserNameLoaded { get; set; } = false;
-    
-    public string? UserNameInput;
+    private bool IsUserStateSet { get; set; }
+    private bool IsUserStateLoaded { get; set; } = false;
 
-    private async Task SetUserName()
+    public bool IsSpectator;
+    public string? UserName;
+
+    private async Task SetUserState()
     {
-        if (UserNameInput is not null)
+        if (UserName is not null)
         {
+            var userState = new UserState()
+            {
+                UserName = UserName,
+                IsSpectator = IsSpectator
+            };
             await _jsRuntime.InvokeVoidAsync("hideUserInputView");
-            await _jsRuntime.InvokeVoidAsync("storeUserName", UserNameInput);
-            IsUserNameSet = true;
-            IsUserNameLoaded = true;
+            await _jsRuntime.InvokeVoidAsync("storeUserState", JsonConvert.SerializeObject(userState));
+            IsUserStateSet = true;
+            IsUserStateLoaded = true;
         }
     }
 
     private async Task TryRestoreUserNameAndJoinRoom()
     {
-        if (UserNameInput is null)
+        if (UserName is null)
         {
-            var userName = await _jsRuntime.InvokeAsync<string>("restoreUserName");
-            if (!string.IsNullOrWhiteSpace(userName))
+            var userState = await _jsRuntime.InvokeAsync<UserState>("restoreUserState");
+            if (userState != null && !string.IsNullOrWhiteSpace(userState.UserName))
             {
-                UserNameInput = userName;
-                IsUserNameSet = true;
+                UserName = userState.UserName;
+                IsSpectator = userState.IsSpectator;
+                IsUserStateSet = true;
             }
         }
-        IsUserNameLoaded = true;
+        IsUserStateLoaded = true;
         await StoreUserNameAsync();
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task StoreUserNameAsync()
     {
-        if (UserNameInput is not null)
+        if (UserName is not null)
         {
             await _jsRuntime.InvokeVoidAsync("hideUserInputView");
-            await _jsRuntime.InvokeVoidAsync("storeUserName", UserNameInput);
+            await _jsRuntime.InvokeVoidAsync("storeUserName", UserName);
         }
     }
     
@@ -74,6 +86,7 @@
             await TryRestoreUserNameAndJoinRoom();
         }
     }
+
 
 
 }
