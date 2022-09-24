@@ -24,10 +24,15 @@
                     {
                         <div class="card m-3" style="max-width: 9rem; max-height: 16rem;">
                             <div class="card-body">
-                                <h5 class="card-title">@room</h5>
-                                <a href="#" class="btn btn-primary my-1" @onclick="() => JoinRoom(room)">JOIN</a>
-                                <a href="#" class="btn btn-secondary my-1" @onclick="() => JoinRoomAsSpectator(room)">SPECTATE</a>
-                                <a href="#" class="btn btn-danger my-1" @onclick="() => CloseRoom(room)">CLOSE</a>
+                                <div class="d-flex flex-column h-100 justify-content-between">
+                                    <h4 class="card-title">@room</h4>
+
+                                    <div>
+                                        <a href="#" class="btn btn-primary my-1" @onclick="() => JoinRoom(room)">JOIN</a>
+                                        <a href="#" class="btn btn-secondary my-1" @onclick="() => JoinRoomAsSpectator(room)">SPECTATE</a>
+                                        <a href="#" class="btn btn-danger my-1" @onclick="() => CloseRoom(room)">CLOSE</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     }
@@ -95,15 +100,15 @@
 
     private void JoinRoom(string roomName)
     {
-        NavigateToRoom(roomName, false);
+        NavigateToRoom(roomName, _userInputComponent.UserName ?? string.Empty, _userInputComponent.IsSpectator);
     }
     
     private void JoinRoomAsSpectator(string roomName)
     {
-        NavigateToRoom(roomName, true);
+        NavigateToRoom(roomName, _userInputComponent.UserName ?? string.Empty, true);
     }
 
-    private void NavigateToRoom(string roomName, bool isSpectator)
+    private void NavigateToRoom(string roomName, string userName, bool isSpectator)
     {
         _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserName}/{isSpectator}");
     }
@@ -111,7 +116,7 @@
     private void CreateRoom()
     {
         if (RoomName is not null)
-            NavigateToRoom(RoomName, false);
+            NavigateToRoom(RoomName, _userInputComponent.UserName ?? string.Empty, _userInputComponent.IsSpectator);
     }
     
     private void CloseRoom(string room)

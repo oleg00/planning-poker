@@ -18,7 +18,9 @@
                                 <input type="checkbox" name="checkbox"
                                        @bind="IsSpectator">
                             </div>
-                            <button type="button" id="sendlogin" class="btn btn-primary mt-2" @onclick="SetUserState">Start</button>
+                            <button type="button" id="sendlogin" 
+                                    class="btn btn-primary mt-2 @(string.IsNullOrEmpty(UserName) ? "disabled" : "")" 
+                                    @onclick="SetUserState">Start</button>
                         </form>
                     </div>
                 </div>
@@ -34,6 +36,9 @@
 
     public bool IsSpectator;
     public string? UserName;
+    
+    [Parameter]
+    public EventCallback OnUserInputSet { get; set; }
 
     private async Task SetUserState()
     {
@@ -48,6 +53,7 @@
             await _jsRuntime.InvokeVoidAsync("storeUserState", JsonConvert.SerializeObject(userState));
             IsUserStateSet = true;
             IsUserStateLoaded = true;
+            await OnUserInputSet.InvokeAsync();
         }
     }
 
@@ -55,7 +61,8 @@
     {
         if (UserName is null)
         {
-            var userState = await _jsRuntime.InvokeAsync<UserState>("restoreUserState");
+            var userStateString = await _jsRuntime.InvokeAsync<string>("restoreUserState");
+            var userState = JsonConvert.DeserializeObject<UserState>(userStateString ?? string.Empty);
             if (userState != null && !string.IsNullOrWhiteSpace(userState.UserName))
             {
                 UserName = userState.UserName;
@@ -64,19 +71,10 @@
             }
         }
         IsUserStateLoaded = true;
-        await StoreUserNameAsync();
+        await SetUserState();
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task StoreUserNameAsync()
-    {
-        if (UserName is not null)
-        {
-            await _jsRuntime.InvokeVoidAsync("hideUserInputView");
-            await _jsRuntime.InvokeVoidAsync("storeUserName", UserName);
-        }
-    }
-    
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await _jsRuntime.InvokeVoidAsync("initTooltips");
