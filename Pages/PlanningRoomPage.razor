@@ -67,6 +67,7 @@ else
                                 <div class="span fw-bold my-2 @(user.IsSpectator ? "text-secondary" : "")">@user.Name</div>
                                 <div class="mx-1 my-2 align-self-center state-circle @(user.HasVoted ? "state-circle-voted" : "")"></div>
                             </div>
+                            <div class="btn btn-secondary btn-sm" @onclick="() => KickUser(user)">Kick</div>
                         </div>
                     }
                 </div>
@@ -284,6 +285,9 @@ else
         }
     }
 
-   
+    private async Task KickUser(PlanningUserPage user)
+    {
+        await _hubConnection?.SendAsync("KickUser", RoomId, user.Name)!;
+    }
 
 }

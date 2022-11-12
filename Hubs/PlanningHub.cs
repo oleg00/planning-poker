@@ -12,12 +12,12 @@ public class PlanningHub : Hub
     {
         _planningPokerService = planningPokerService;
     }
-    
+
     public async Task SendMessage(string user, string message)
     {
         await Clients.All.SendAsync("ReceiveMessage", user, message);
     }
-    
+
     public async Task JoinRoomAsync(string groupName, string userName, bool isSpectator)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
@@ -30,7 +30,7 @@ public class PlanningHub : Hub
     {
         if (string.IsNullOrEmpty(groupName) || string.IsNullOrEmpty(userName))
             return;
-        
+
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, groupName);
         _planningPokerService.LeaveRoom(groupName, userName);
         await Clients.Group(groupName).SendAsync("ReceiveUsers", _planningPokerService.GetUsersFromRoom(groupName));
@@ -78,7 +78,7 @@ public class PlanningHub : Hub
     {
         await Clients.Group(groupName).SendAsync("RevealCards");
     }
-    
+
     public async Task StartNewGame(string groupName)
     {
         await Clients.Group(groupName).SendAsync("StartNewGame");
@@ -90,6 +90,15 @@ public class PlanningHub : Hub
         _planningPokerService.RemoveRoom(groupName);
         await Clients.All.SendAsync("ReceiveRooms", _planningPokerService.GetRooms().ToList());
     }
-}
 
-    
+    public async Task KickUser(string groupName, string userName)
+    {
+        var userConnectionId = _planningPokerService.GetUserConnectionIdByNameAndGroup(groupName, userName);
+        if (string.IsNullOrEmpty(groupName))
+            return;
+        await Groups.RemoveFromGroupAsync(userConnectionId, groupName);
+        _planningPokerService.RemoveUser(userConnectionId);
+        await Clients.Group(groupName).SendAsync("ReceiveUsers", _planningPokerService.GetUsersFromRoom(groupName));
+    }
+
+}

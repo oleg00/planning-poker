@@ -15,6 +15,7 @@ public interface IPlanningPokerService
     void LeaveRoom(string groupName, string userName);
     string GetRoomByConnectionId(string contextConnectionId);
     void RemoveRoom(string groupName);
+    string GetUserConnectionIdByNameAndGroup(string groupName, string userName);
 }
 
 public class PlanningPokerService : IPlanningPokerService
@@ -35,6 +36,11 @@ public class PlanningPokerService : IPlanningPokerService
         }
     }
 
+    public void ClearCardValues(string groupName)
+    {
+        Rooms[groupName].ForEach(u => u.CardValue = 0);
+    }
+    
     public IEnumerable<string> GetRooms()
     {
         return Rooms.Select(r => r.Key).ToList();
@@ -49,16 +55,6 @@ public class PlanningPokerService : IPlanningPokerService
         );
     }
 
-    public void SetCardValue(string groupName, string userName, double cardValue)
-    {
-        Rooms[groupName].FirstOrDefault(pu => pu.Name.Equals(userName))!.CardValue = cardValue;
-    }
-
-    public void ClearCardValues(string groupName)
-    {
-        Rooms[groupName].ForEach(u => u.CardValue = 0);
-    }
-
     public List<PlanningUserPage> GetUsersFromRoom(string groupName)
     {
         return !Rooms.ContainsKey(groupName)
@@ -69,14 +65,31 @@ public class PlanningPokerService : IPlanningPokerService
                 IsSpectator = x.IsSpectator
             }).ToList();
     }
-
-    public void RemoveUser(string connectionId)
+    
+    public string GetRoomByConnectionId(string contextConnectionId)
     {
-        var groupKey = GetRoomByConnectionId(connectionId);
-        if (string.IsNullOrEmpty(groupKey))
-            return;
-        
-        Rooms[groupKey] = Rooms[groupKey].Where(pu => pu.ConnectionId != connectionId).ToList();
+        foreach (var (roomKey, usersList) in Rooms)
+        {
+            if (usersList.Any(r => r.ConnectionId == contextConnectionId))
+                return roomKey;
+        }
+        return string.Empty;
+    }
+    
+    public string GetUserConnectionIdByNameAndGroup(string groupName, string userName)
+    {
+        var userConnectionId = string.Empty;
+        if (Rooms.ContainsKey(groupName))
+        {
+            var user = Rooms[groupName].SingleOrDefault(r => r.Name.Equals(userName));
+            userConnectionId = user?.ConnectionId ?? string.Empty;
+        }
+        return userConnectionId;
+    }
+    
+    public void SetCardValue(string groupName, string userName, double cardValue)
+    {
+        Rooms[groupName].FirstOrDefault(pu => pu.Name.Equals(userName))!.CardValue = cardValue;
     }
 
     public void LeaveRoom(string groupName, string userName)
@@ -86,15 +99,14 @@ public class PlanningPokerService : IPlanningPokerService
         
         Rooms[groupName] = Rooms[groupName].Where(pu => pu.ConnectionId != userName).ToList();
     }
-
-    public string GetRoomByConnectionId(string contextConnectionId)
+    
+    public void RemoveUser(string connectionId)
     {
-        foreach (var (roomKey, usersList) in Rooms)
-        {
-            if (usersList.Any(r => r.ConnectionId == contextConnectionId))
-                return roomKey;
-        }
-        return string.Empty;
+        var groupKey = GetRoomByConnectionId(connectionId);
+        if (string.IsNullOrEmpty(groupKey))
+            return;
+        
+        Rooms[groupKey] = Rooms[groupKey].Where(pu => pu.ConnectionId != connectionId).ToList();
     }
 
     public void RemoveRoom(string groupName)
