@@ -62,7 +62,8 @@ public class PlanningPokerService : IPlanningPokerService
             : Rooms[groupName].Select(x => new PlanningUserPage
             {
                 Name = x.Name,
-                IsSpectator = x.IsSpectator
+                IsSpectator = x.IsSpectator,
+                CardValue = x.CardValue
             }).ToList();
     }
     
