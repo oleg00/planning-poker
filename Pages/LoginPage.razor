@@ -1,0 +1,58 @@
+﻿@page "/LoginPage"
+
+@using Microsoft.AspNetCore.Components
+@using PlanningPoker.Data
+@using System.Web
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+
+@inject NavigationManager NavigationManager
+
+<EditForm Model="@userModel">
+    <div class="container container username-container container-reveal min-vw-100">
+        <div class="row justify-content-center align-items-center" style="height:100vh">
+            <div class="col-4">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <h5 class="form-label">Name</h5>
+                            <InputText class="form-control" name="username"
+                                       @bind-Value="userModel.UserName"/>
+                            <h5 class="form-label mt-2">Spectator mode</h5>
+                            <InputCheckbox
+                                @bind-Value="userModel.IsSpectator"/>
+                        </div>
+
+                        <a class="btn btn-primary mt-2 @(string.IsNullOrEmpty(userModel.UserName) ? "disabled" : "")"
+                           href="/login?username=@Encode(userModel.UserName)&isSpectator=@Encode(userModel.IsSpectator.ToString())&redirectUrl=@Encode(ReturnUrl)">
+                            Login
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+
+    private readonly UserState userModel = new();
+
+    private string ReturnUrl { get; set; } = string.Empty;
+
+    private string Encode(string param) {
+        return HttpUtility.UrlEncode(param);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender) {
+            Uri uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("ReturnUrl", out StringValues values)) {
+                ReturnUrl = values.FirstOrDefault() ?? throw new InvalidOperationException("Null returnUrl passed");
+            }
+        }
+    }
+
+}

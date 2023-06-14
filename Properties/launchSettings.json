@@ -11,7 +11,7 @@
     "PlanningPoker": {
       "commandName": "Project",
       "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5237",
+      "applicationUrl": "https://localhost:7037;http://localhost:5237",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

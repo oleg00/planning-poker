@@ -1,10 +1,8 @@
 ﻿@page "/"
 @page "/planningrooms"
-@using Microsoft.AspNetCore.SignalR.Client
-@using PlanningPoker.Components
-@inject NavigationManager _navigationManager
 
-<UserInputComponent @ref="_userInputComponent"></UserInputComponent>
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager NavigationManager
 
 <div class="container min-vh-100 d-flex flex-column flex-grow-1">
 
@@ -82,8 +80,6 @@
     private string? RoomName { get; set; }
     private HubConnection? _hubConnection;
 
-    private UserInputComponent _userInputComponent;
-    
     private void OnReceiveRooms(List<string> rooms)
     {
         Rooms.Clear();
@@ -100,23 +96,26 @@
 
     private void JoinRoom(string roomName)
     {
-        NavigateToRoom(roomName, _userInputComponent.UserName ?? string.Empty, _userInputComponent.IsSpectator);
+        NavigateToRoom(roomName);
     }
     
     private void JoinRoomAsSpectator(string roomName)
     {
-        NavigateToRoom(roomName, _userInputComponent.UserName ?? string.Empty, true);
+        NavigateToRoom(roomName, true);
     }
 
-    private void NavigateToRoom(string roomName, string userName, bool isSpectator)
-    {
-        _navigationManager.NavigateTo($"/planningrooms/{roomName}/{_userInputComponent.UserName}/{isSpectator}");
+    private void NavigateToRoom(string roomName, bool? isSpectator = null) {
+        var baseRoomUri = $"/planningrooms/{roomName}";
+        if (isSpectator != null) {
+            baseRoomUri += "/true";
+        }
+        NavigationManager.NavigateTo(baseRoomUri);
     }
     
     private void CreateRoom()
     {
         if (RoomName is not null)
-            NavigateToRoom(RoomName, _userInputComponent.UserName ?? string.Empty, _userInputComponent.IsSpectator);
+            NavigateToRoom(RoomName);
     }
     
     private void CloseRoom(string room)
@@ -127,13 +126,11 @@
     protected override async Task OnInitializedAsync()
     {
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri("/planninghub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri("/planninghub"))
             .Build();
         _hubConnection.On<List<string>>("ReceiveRooms", OnReceiveRooms);
         await _hubConnection.StartAsync();
         await SetRooms();
     }
-
-    
 
 }

@@ -1,169 +1,144 @@
-﻿@page "/planningrooms/{roomId}/{userName}/{isSpectator}"
-@page "/planningrooms/{roomId}"
+﻿@page "/planningrooms/{roomId}"
+@page "/planningrooms/{roomId}/{isSpectatorParam}"
 
-@inject IJSRuntime _jsRuntime
-@inject NavigationManager _navigationManager
+@attribute [Authorize]
+
+@inject IJSRuntime JsRuntime
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
 
 @implements IAsyncDisposable
 
 @using System.Globalization
 @using Microsoft.AspNetCore.SignalR.Client
-@using PlanningPoker.Components
 @using PlanningPoker.Data
+@using PlanningPoker.Services
 
 <PageTitle>Creatio Planning Poker</PageTitle>
 
-@if (string.IsNullOrEmpty(UserName) && string.IsNullOrEmpty(IsSpectator))
-{
-    <UserInputComponent @ref="_userInputComponent" OnUserInputSet="RedirectToRoomWithUserInput"></UserInputComponent>
-}
-else
-{
-    <div class="container min-vh-100 main-container d-flex flex-column">
+<div class="container min-vh-100 main-container d-flex flex-column">
+
+    <div class="row flex-grow-1">
+        <div class="col text-center d-flex align-content-center justify-content-center">
+            <h1 class="align-self-center">@RoomId</h1>
+        </div>
+    </div>
+
+    <div class="row flex-grow-1">
 
         <div class="row flex-grow-1">
-            <div class="col text-center d-flex align-content-center justify-content-center">
-                <h1 class="align-self-center">@RoomId</h1>
+            <div class="col">
+                <hr>
             </div>
         </div>
 
         <div class="row flex-grow-1">
-
-            <div class="row flex-grow-1">
-                <div class="col">
-                    <hr>
-                </div>
-            </div>
-
-            <div class="row flex-grow-1">
-                <div class="col"></div>
-                <div class="col d-flex justify-content-around">
-                    @foreach (var user in PlanningUsers)
-                    {
-                        <div class="user-card m-2">
-                            <div class="unrevealed-card flip-card m-auto">
-                                <div class="flip-card-inner">
-                                       <div class="@(user.HasVoted ? "voted front flip-card-front" : "front flip-card-front")">
-                                            @if (user.IsSpectator)
-                                            {
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cup-hot" viewBox="0 0 16 16">
-                                                    <path fill-rule="evenodd" d="M.5 6a.5.5 0 0 0-.488.608l1.652 7.434A2.5 2.5 0 0 0 4.104 16h5.792a2.5 2.5 0 0 0 2.44-1.958l.131-.59a3 3 0 0 0 1.3-5.854l.221-.99A.5.5 0 0 0 13.5 6H.5ZM13 12.5a2.01 2.01 0 0 1-.316-.025l.867-3.898A2.001 2.001 0 0 1 13 12.5ZM2.64 13.825 1.123 7h11.754l-1.517 6.825A1.5 1.5 0 0 1 9.896 15H4.104a1.5 1.5 0 0 1-1.464-1.175Z"/>
-                                                    <path d="m4.4.8-.003.004-.014.019a4.167 4.167 0 0 0-.204.31 2.327 2.327 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.31 3.31 0 0 1-.202.388 5.444 5.444 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 3.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 3.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 3 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 4.4.8Zm3 0-.003.004-.014.019a4.167 4.167 0 0 0-.204.31 2.327 2.327 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.31 3.31 0 0 1-.202.388 5.444 5.444 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 6.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 6.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 6 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 7.4.8Zm3 0-.003.004-.014.019a4.077 4.077 0 0 0-.204.31 2.337 2.337 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.198 3.198 0 0 1-.202.388 5.385 5.385 0 0 1-.252.382l-.019.025-.005.008-.002.002A.5.5 0 0 1 9.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 9.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 9 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 10.4.8Z"/>
-                                                </svg>
-                                            }
-                                       </div>
-                                    @if (user.Name == UserName) {
-                                        <div class="back flip-card-back">@user.CardValue</div>
-                                    }
-                                    else {
-                                        <div class="back flip-card-back">XXX</div>
+            <div class="col"></div>
+            <div class="col d-flex justify-content-around">
+                @foreach (var user in PlanningUsers) {
+                    <div class="user-card m-2">
+                        <div class="unrevealed-card flip-card m-auto">
+                            <div class="flip-card-inner">
+                                <div class="@(user.HasVoted ? "voted front flip-card-front" : "front flip-card-front")">
+                                    @if (user.IsSpectator) {
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cup-hot" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M.5 6a.5.5 0 0 0-.488.608l1.652 7.434A2.5 2.5 0 0 0 4.104 16h5.792a2.5 2.5 0 0 0 2.44-1.958l.131-.59a3 3 0 0 0 1.3-5.854l.221-.99A.5.5 0 0 0 13.5 6H.5ZM13 12.5a2.01 2.01 0 0 1-.316-.025l.867-3.898A2.001 2.001 0 0 1 13 12.5ZM2.64 13.825 1.123 7h11.754l-1.517 6.825A1.5 1.5 0 0 1 9.896 15H4.104a1.5 1.5 0 0 1-1.464-1.175Z"/>
+                                            <path d="m4.4.8-.003.004-.014.019a4.167 4.167 0 0 0-.204.31 2.327 2.327 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.31 3.31 0 0 1-.202.388 5.444 5.444 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 3.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 3.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 3 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 4.4.8Zm3 0-.003.004-.014.019a4.167 4.167 0 0 0-.204.31 2.327 2.327 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.31 3.31 0 0 1-.202.388 5.444 5.444 0 0 1-.253.382l-.018.025-.005.008-.002.002A.5.5 0 0 1 6.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 6.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 6 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 7.4.8Zm3 0-.003.004-.014.019a4.077 4.077 0 0 0-.204.31 2.337 2.337 0 0 0-.141.267c-.026.06-.034.092-.037.103v.004a.593.593 0 0 0 .091.248c.075.133.178.272.308.445l.01.012c.118.158.26.347.37.543.112.2.22.455.22.745 0 .188-.065.368-.119.494a3.198 3.198 0 0 1-.202.388 5.385 5.385 0 0 1-.252.382l-.019.025-.005.008-.002.002A.5.5 0 0 1 9.6 4.2l.003-.004.014-.019a4.149 4.149 0 0 0 .204-.31 2.06 2.06 0 0 0 .141-.267c.026-.06.034-.092.037-.103a.593.593 0 0 0-.09-.252A4.334 4.334 0 0 0 9.6 2.8l-.01-.012a5.099 5.099 0 0 1-.37-.543A1.53 1.53 0 0 1 9 1.5c0-.188.065-.368.119-.494.059-.138.134-.274.202-.388a5.446 5.446 0 0 1 .253-.382l.025-.035A.5.5 0 0 1 10.4.8Z"/>
+                                        </svg>
                                     }
                                 </div>
+                                @if (user.Name == UserName) {
+                                    <div class="back flip-card-back">@user.CardValue</div>
+                                }
+                                else {
+                                    <div class="back flip-card-back">XXX</div>
+                                }
                             </div>
-                            <div class="d-flex position-relative mt-2">
-                                <div class="span fw-bold my-2 @(user.IsSpectator ? "text-secondary" : "")">@user.Name</div>
-                                <div class="mx-1 my-2 align-self-center state-circle @(user.HasVoted ? "state-circle-voted" : "")"></div>
+                        </div>
+                        <div class="d-flex position-relative mt-2">
+                            <div class="span fw-bold my-2 @(user.IsSpectator ? "text-secondary" : "")">@user.Name</div>
+                            <div class="mx-1 my-2 align-self-center state-circle @(user.HasVoted ? "state-circle-voted" : "")"></div>
+                        </div>
+                        <div class="btn btn-secondary btn-sm" @onclick="() => KickUser(user)">Kick</div>
+                    </div>
+                }
+            </div>
+            <div class="col"></div>
+        </div>
+
+        <div class="row"></div>
+
+        <div class="row">
+            <div class="col d-flex justify-content-center align-content-end">
+
+                <button class="btn btn-primary align-self-end my-2 @(PlanningUsers.Where(pu => !pu.IsSpectator).All(pu => pu.HasVoted) ? "" : "disabled")"
+                        style="max-height: 3em;"
+                        @onclick="RevealCardsAsync">
+                    REVEAL CARDS
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row flex-grow-1">
+
+        <div class="row d-flex align-content-end">
+            <hr>
+        </div>
+        <div class="row align-items-center">
+            <div class="cards-list d-flex justify-content-center my-2">
+                @foreach (var (card, tooltip) in PredefinedCardValues) {
+                    <button title="@tooltip" data-toggle="tooltip" data-popper-placement="top"
+                            class="btn planning-card card-@card"
+                            @onclick="() => PickCardAsync(card)">
+                        @card.ToString(new CultureInfo("en-US"))
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container-reveal min-vh-100 min-vw-100 h-100 hidden">
+
+    <div class="container min-vh-100">
+        <div class="row min-vh-100">
+            <div class="col-12 container-reveal-center d-flex flex-column">
+                <div class="card-container d-flex container justify-content-center">
+
+                    @foreach (var cardValue in CardValues) {
+                        <div class="card m-3">
+                            <div class="card-header h-50">
+                                <h1 class="text-center text-white mt-1">@cardValue.Key</h1>
                             </div>
-                            <div class="btn btn-secondary btn-sm" @onclick="() => KickUser(user)">Kick</div>
+                            <div class="card-body h-50">
+                                <h2 class="card-text text-center mt-1">
+                                    @cardValue.Value.ToString(new CultureInfo("en-US"))
+                                </h2>
+                            </div>
                         </div>
                     }
                 </div>
-                <div class="col"></div>
-            </div>
 
-            <div class="row"></div>
+                @if (CardValues.Any()) {
+                    <h3 class="align-self-center mt-2 text-white">Average: @(Math.Ceiling(CardValues.Average(x => x.Value)))</h3>
+                }
 
-            <div class="row">
-                <div class="col d-flex justify-content-center align-content-end">
-
-                    <button class="btn btn-primary align-self-end my-2 @(PlanningUsers.Where(pu => !pu.IsSpectator).All(pu => pu.HasVoted) ? "" : "disabled")"
-                            style="max-height: 3em;"
-                            @onclick="RevealCardsAsync">
-                        REVEAL CARDS
-                    </button>
-                </div>
-            </div>
-
-        </div>
-
-        <div class="row flex-grow-1">
-
-            <div class="row d-flex align-content-end">
                 <hr>
-            </div>
-            <div class="row align-items-center">
-                <div class="cards-list d-flex justify-content-center my-2">
-                    @foreach (var (card, tooltip) in PredefinedCardValues)
-                    {
-                        <button title="@tooltip" data-toggle="tooltip" data-popper-placement="top"
-                                class="btn planning-card card-@card"
-                                @onclick="() => PickCardAsync(card)">
-                            @card.ToString(new CultureInfo("en-US"))
-                        </button>
-                    }
-                </div>
+                <button class="glow-on-hover align-self-center mt-2" type="button" @onclick="StartNewGameAsync">
+                    NEW GAME
+                </button>
             </div>
         </div>
-
     </div>
 
-    <div class="container-reveal min-vh-100 min-vw-100 h-100 hidden">
+</div>
 
-        <div class="container min-vh-100">
-            <div class="row min-vh-100">
-                <div class="col-12 container-reveal-center d-flex flex-column">
-                    <div class="card-container d-flex container justify-content-center">
-
-                        @foreach (var cardValue in CardValues)
-                        {
-                            <div class="card m-3">
-                                <div class="card-header h-50">
-                                    <h1 class="text-center text-white mt-1">@cardValue.Key</h1>
-                                </div>
-                                <div class="card-body h-50">
-                                    <h2 class="card-text text-center mt-1">
-                                        @cardValue.Value.ToString(new CultureInfo("en-US"))
-                                    </h2>
-                                </div>
-                            </div>
-                        }
-                    </div>
-
-                    @if (CardValues.Any())
-                    {
-                        <h3 class="align-self-center mt-2 text-white">Average: @(Math.Ceiling(CardValues.Average(x => x.Value)))</h3>
-                    }
-
-                    <hr>
-                    <button class="glow-on-hover align-self-center mt-2" type="button" @onclick="StartNewGameAsync">
-                        NEW GAME
-                    </button>
-                </div>
-            </div>
-        </div>
-
-    </div>
-}
 @code {
-
-    [Parameter]
-    public string? RoomId { get; set; }
-
-    [Parameter]
-    public string? UserName { get; set; }
-
-    [Parameter]
-    public string? IsSpectator { get; set; }
-
-    private HubConnection? _hubConnection;
     
-    private UserInputComponent _userInputComponent;
-
-    private List<PlanningUserPage> PlanningUsers { get; } = new();
-    private Dictionary<string, double> CardValues { get; set; } = new();
-
-    private static List<(double, string)> PredefinedCardValues => new()
-    {
+    private static List<(double, string)> PredefinedCardValues => new() {
         (0.5, "изян"),
         (1, "изи"),
         (2, "просто"),
@@ -171,21 +146,32 @@ else
         (5, "норм"),
         (8, "норм так")
     };
+    
+    private string? UserName { get; set; }
 
-    private void OnReceivedUserVote(string userName, double vote)
-    {
+    private bool IsSpectator { get; set; }
+
+    private HubConnection? _hubConnection;
+
+    private List<PlanningUserPage> PlanningUsers { get; } = new();
+    private Dictionary<string, double> CardValues { get; set; } = new();
+
+    [Parameter]
+    public string? RoomId { get; set; }
+    
+    [Parameter]
+    public string? IsSpectatorParam { get; set; }
+
+    private void OnReceivedUserVote(string userName, double vote) {
         var planningUser = PlanningUsers.FirstOrDefault(pu => pu.Name == userName);
         planningUser!.CardValue = vote;
         InvokeAsync(StateHasChanged);
     }
 
-    private void OnReceivedUsers(List<PlanningUserPage> users)
-    {
+    private void OnReceivedUsers(List<PlanningUserPage> users) {
         PlanningUsers.Clear();
-        foreach (var incomingUser in users)
-        {
-            PlanningUsers.Add(new PlanningUserPage()
-            {
+        foreach (var incomingUser in users) {
+            PlanningUsers.Add(new PlanningUserPage() {
                 Name = incomingUser.Name,
                 CardValue = incomingUser.CardValue,
                 IsSpectator = incomingUser.IsSpectator
@@ -194,51 +180,39 @@ else
         InvokeAsync(StateHasChanged);
     }
 
-    private async Task JoinRoomAsync()
-    {
-        if (RoomId is not null && UserName is not null && _hubConnection is not null)
-        {
-            var isSpectatorParsed = bool.TryParse(IsSpectator, out var isSpectator);
+    private async Task JoinRoomAsync() {
+        if (RoomId is not null && UserName is not null && _hubConnection is not null) {
             await _hubConnection?.SendAsync("JoinRoomAsync", RoomId, UserName,
-                isSpectatorParsed && isSpectator)!;
+                IsSpectator)!;
         }
     }
 
-    private async Task PickCardAsync(double card)
-    {
+    private async Task PickCardAsync(double card) {
         await _hubConnection?.SendAsync("SetCardValue", RoomId, UserName, card)!;
         PlanningUsers.FirstOrDefault(pu => pu.Name == UserName)!.CardValue = card;
         StateHasChanged();
     }
 
-    private async Task RevealCardsAsync()
-    {
+    private async Task RevealCardsAsync() {
         await _hubConnection?.SendAsync("RevealCards", RoomId)!;
     }
 
-    private async Task RevealCardsOnPageAsync()
-    {
+    private async Task RevealCardsOnPageAsync() {
         CardValues = await _hubConnection?.InvokeAsync<Dictionary<string, double>>("GetCardValues", RoomId)!;
-        await _jsRuntime.InvokeVoidAsync("switchRevealView");
+        await JsRuntime.InvokeVoidAsync("switchRevealView");
         await InvokeAsync(StateHasChanged);
     }
 
-    private async Task StartNewGameAsync()
-    {
+    private async Task StartNewGameAsync() {
         await _hubConnection?.SendAsync("StartNewGame", RoomId)!;
     }
 
-    private async Task StartNewGameOnPageAsync()
-    {
-        PlanningUsers.ForEach(pu =>
-        {
-            pu.CardValue = 0;
-        });
-        await _jsRuntime.InvokeVoidAsync("switchRevealView");
+    private async Task StartNewGameOnPageAsync() {
+        PlanningUsers.ForEach(pu => { pu.CardValue = 0; });
+        await JsRuntime.InvokeVoidAsync("switchRevealView");
     }
 
-    private void InitHubListeners()
-    {
+    private void InitHubListeners() {
         if (_hubConnection is null)
             return;
 
@@ -247,44 +221,47 @@ else
         _hubConnection.On("StartNewGame", StartNewGameOnPageAsync);
         _hubConnection.On("RevealCards", RevealCardsOnPageAsync);
     }
+
+    private async Task FillUserState() {
+        var userState = await AuthService.GetSignedUserState();
+        UserName = userState.UserName;
+        if (IsSpectatorParam == null) {
+            IsSpectator = userState.IsSpectator;
+        }
+        else {
+            IsSpectator = bool.TryParse(IsSpectatorParam, out bool isSpectatorParsed) && isSpectatorParsed;
+        }
+        
+    }
     
-    private async Task RedirectToRoomWithUserInput()
-    {
-        _navigationManager.NavigateTo($"/planningrooms/{RoomId}/{_userInputComponent.UserName}/{_userInputComponent.IsSpectator}", true);
-        // await JoinRoomAsync();
+    private async Task KickUser(PlanningUserPage user) {
+        await _hubConnection?.SendAsync("KickUser", RoomId, user.Name)!;
     }
 
-    protected override async Task OnInitializedAsync()
-    {
+    protected override async Task OnInitializedAsync() {
+        await FillUserState();
+
         _hubConnection = new HubConnectionBuilder()
-            .WithUrl(_navigationManager.ToAbsoluteUri("/planninghub"))
+            .WithUrl(NavigationManager.ToAbsoluteUri("/planninghub"))
             .Build();
         InitHubListeners();
+        
         await _hubConnection.StartAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        await _jsRuntime.InvokeVoidAsync("initTooltips");
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        await JsRuntime.InvokeVoidAsync("initTooltips");
 
-        if (firstRender)
-        {
+        if (firstRender) {
             await JoinRoomAsync();
         }
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        if (_hubConnection is not null)
-        {
+    public async ValueTask DisposeAsync() {
+        if (_hubConnection is not null) {
             await _hubConnection.SendAsync("LeaveRoomAsync", RoomId, UserName);
             await _hubConnection.DisposeAsync();
         }
-    }
-
-    private async Task KickUser(PlanningUserPage user)
-    {
-        await _hubConnection?.SendAsync("KickUser", RoomId, user.Name)!;
     }
 
 }
