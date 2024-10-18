@@ -26,14 +26,15 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options => {
         options.Cookie.IsEssential = true;
         options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.None;
+        // options.Cookie.SameSite = SameSiteMode.;
         options.Cookie.Name = "PlanningPokerAuthCookie";
     });
 
 builder.Services.Configure<CookiePolicyOptions>(options => {
     options.ConsentCookie.IsEssential = true;
     options.CheckConsentNeeded = context => false;
-    options.MinimumSameSitePolicy = SameSiteMode.None;
+    // options.Secure = CookieSecurePolicy.SameAsRequest;
+    // options.MinimumSameSitePolicy = SameSiteMode.None;
 });
 
 builder.Services.AddHttpContextAccessor();
