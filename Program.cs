@@ -22,20 +22,36 @@ builder.Services.AddResponseCompression(opts =>
         new[] { "application/octet-stream" });
 });
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options => {
-        options.Cookie.IsEssential = true;
-        options.Cookie.HttpOnly = true;
-        // options.Cookie.SameSite = SameSiteMode.;
-        options.Cookie.Name = "PlanningPokerAuthCookie";
-    });
+// builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+//     .AddCookie(options => {
+//         options.Cookie.IsEssential = true;
+//         options.Cookie.HttpOnly = true;
+//         options.Cookie.Name = "PlanningPokerAuthCookie";
+//         options.SlidingExpiration = true;
+//         options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+//     });
+//
+// builder.Services.Configure<CookiePolicyOptions>(options => {
+//     options.ConsentCookie.IsEssential = true;
+//     options.CheckConsentNeeded = context => false;
+//     options.Secure = CookieSecurePolicy.None;
+// });
 
-builder.Services.Configure<CookiePolicyOptions>(options => {
-    options.ConsentCookie.IsEssential = true;
-    options.CheckConsentNeeded = context => false;
-    // options.Secure = CookieSecurePolicy.SameAsRequest;
-    // options.MinimumSameSitePolicy = SameSiteMode.None;
-});
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme; 
+
+    })
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "PlanningPokerAuthCookie";
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Set to false for HTTP requests
+        options.SlidingExpiration = true;
+        options.Cookie.SameSite = SameSiteMode.Unspecified; // Adjust as needed
+    });
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<HttpContextAccessor>();
