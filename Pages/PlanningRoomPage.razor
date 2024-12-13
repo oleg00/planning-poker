@@ -115,7 +115,7 @@
                             </div>
                             <div class="card-body h-50">
                                 <h2 class="card-text text-center mt-1">
-                                    @cardValue.Value.ToString(new CultureInfo("en-US"))
+                                    @cardValue.Value.CardValue.ToString(new CultureInfo("en-US"))
                                 </h2>
                             </div>
                         </div>
@@ -123,7 +123,14 @@
                 </div>
 
                 @if (CardValues.Any()) {
-                    <h3 class="align-self-center mt-2 text-white">Average: @(Math.Ceiling(CardValues.Average(x => x.Value)))</h3>
+                    <h3 class="align-self-center mt-2 text-white">
+                        Average: @(
+                                 CardValues.Where(cv => !cv.Value.IsSpectator).All(x => x.Value.CardValue == 0.5) 
+                                     ? 0.5 
+                                     : Math.Ceiling(CardValues.Values.ToList()
+                                         .Where(x => !x.IsSpectator).Average(x => x.CardValue))
+                                 )
+                    </h3>
                 }
 
                 <hr>
@@ -154,7 +161,7 @@
     private HubConnection? _hubConnection;
 
     private List<PlanningUserPage> PlanningUsers { get; } = new();
-    private Dictionary<string, double> CardValues { get; set; } = new();
+    private Dictionary<string, PlanningCardValue> CardValues { get; set; } = new();
 
     [Parameter]
     public string? RoomId { get; set; }
@@ -198,7 +205,7 @@
     }
 
     private async Task RevealCardsOnPageAsync() {
-        CardValues = await _hubConnection?.InvokeAsync<Dictionary<string, double>>("GetCardValues", RoomId)!;
+        CardValues = await _hubConnection?.InvokeAsync<Dictionary<string, PlanningCardValue>>("GetCardValues", RoomId)!;
         await JsRuntime.InvokeVoidAsync("switchRevealView");
         await InvokeAsync(StateHasChanged);
     }

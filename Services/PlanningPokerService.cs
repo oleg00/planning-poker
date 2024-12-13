@@ -6,7 +6,7 @@ public interface IPlanningPokerService
 {
     void JoinRoom(string groupName, string userName, bool isSpectator, string connectionId);
     IEnumerable<string> GetRooms();
-    Dictionary<string, double> GetCardValues(string groupName);
+    Dictionary<string, PlanningCardValue> GetCardValues(string groupName);
     void SetCardValue(string groupName, string userName, double cardValue);
     void ClearCardValues(string groupName);
     List<PlanningUserPage> GetUsersFromRoom(string groupName);
@@ -45,11 +45,12 @@ public class PlanningPokerService : IPlanningPokerService
         return Rooms.Select(r => r.Key).ToList();
     }
 
-    public Dictionary<string, double> GetCardValues(string groupName)
+    public Dictionary<string, PlanningCardValue> GetCardValues(string groupName)
     {
-        return new Dictionary<string, double>(
+        return new Dictionary<string, PlanningCardValue>(
             Rooms[groupName]
-                .Select(x => new KeyValuePair<string, double>(x.Name, x.CardValue))
+                .Select(x => new KeyValuePair<string, PlanningCardValue>(x.Name, 
+                    new PlanningCardValue(x.Name, x.CardValue, x.IsSpectator)))
                 .ToList()
         );
     }

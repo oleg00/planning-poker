@@ -4,6 +4,8 @@ using PlanningPoker.Services;
 
 namespace PlanningPoker.Hubs;
 
+using PlanningPoker.Data;
+
 public class PlanningHub : Hub
 {
     private readonly IPlanningPokerService _planningPokerService;
@@ -52,7 +54,7 @@ public class PlanningHub : Hub
         await Clients.Group(groupName).SendAsync("ReceiveUserVote", userName, cardValue);
     }
 
-    public Dictionary<string, double> GetCardValues(string groupName)
+    public Dictionary<string, PlanningCardValue> GetCardValues(string groupName)
     {
         return _planningPokerService.GetCardValues(groupName);
     }
